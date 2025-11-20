@@ -1,0 +1,6 @@
+cat > ~/.klei/DoNotStarveTogether/MyDediServer/Caves/worldgenoverride.lua << 'EOF'
+return {
+    override_enabled = true,
+    preset = "DST_CAVE",
+}
+EOF
