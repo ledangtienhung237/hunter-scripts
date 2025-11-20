@@ -44,7 +44,7 @@ check_success "Downloaded SteamCMD"
 tar -xvzf steamcmd_linux.tar.gz
 check_success "Extracted SteamCMD"
 
-check_exists "~/steamcmd/steamcmd.sh"
+check_exists "$HOME/steamcmd/steamcmd.sh"
 
 #######################################
 # STEP 2 – Install DST Dedicated Server
@@ -60,10 +60,10 @@ cd ~/steamcmd
 ./steamcmd.sh +login anonymous +force_install_dir ~/dstserver +app_update 343050 validate +quit
 check_success "SteamCMD installed DST dedicated server"
 
-check_exists "~/dstserver/bin"
-check_exists "~/dstserver/bin64"
-check_exists "~/dstserver/data"
-check_exists "~/dstserver/mods"
+check_exists "$HOME/dstserver/bin"
+check_exists "$HOME/dstserver/bin64"
+check_exists "$HOME/dstserver/data"
+check_exists "$HOME/dstserver/mods"
 
 #######################################
 # STEP 3 – Create Klei folder structure
@@ -77,7 +77,7 @@ check_success "Created Master shard folder"
 mkdir -p ~/.klei/DoNotStarveTogether/MyDediServer/Caves
 check_success "Created Caves shard folder"
 
-check_exists "~/.klei/DoNotStarveTogether/MyDediServer"
+check_exists "$HOME/.klei/DoNotStarveTogether/MyDediServer"
 
 #######################################
 # DONE
@@ -87,6 +87,7 @@ echo -e "${GREEN}===================================="
 echo " DST SERVER INSTALLATION COMPLETED "
 echo "====================================${NC}"
 EOF
+
 
 
 
