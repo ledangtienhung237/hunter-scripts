@@ -1,0 +1,41 @@
+# === CONFIG ===
+$rg = "YOUR-RESOURCE-GROUP"        # Thay bằng Resource Group của VM
+$nsg = "YOUR-NSG-NAME"             # Tên NSG đang gắn vào NIC hoặc Subnet
+
+# DST Ports
+$ports = @(
+    @{Name="DST-Master";       Port=10999},
+    @{Name="DST-Caves";        Port=11000},
+    @{Name="DST-Internal";     Port=10888},
+    @{Name="DST-Steam1";       Port=27016},
+    @{Name="DST-Steam2";       Port=27017},
+    @{Name="DST-Steam3";       Port=27018},
+    @{Name="DST-Auth";         Port=8768}
+)
+
+# === CREATE RULES ===
+$priority = 110
+
+foreach ($p in $ports) {
+    $ruleName = $p.Name
+    $portNum  = $p.Port
+
+    Write-Output "Creating rule $ruleName for port $portNum ..."
+
+    az network nsg rule create `
+        --resource-group $rg `
+        --nsg-name $nsg `
+        --name $ruleName `
+        --priority $priority `
+        --direction Inbound `
+        --protocol Tcp `
+        --source-address-prefixes "*" `
+        --source-port-ranges "*" `
+        --destination-address-prefixes "*" `
+        --destination-port-ranges $portNum `
+        --access Allow
+
+    $priority += 1
+}
+
+Write-Output "✔ DONE – All DST ports opened successfully!"
