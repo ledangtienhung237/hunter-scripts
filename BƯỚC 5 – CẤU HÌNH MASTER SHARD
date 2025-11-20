@@ -1,0 +1,16 @@
+cat > ~/.klei/DoNotStarveTogether/MyDediServer/Master/server.ini << 'EOF'
+[SHARD]
+is_master = true
+name = Master
+
+[NETWORK]
+server_port = 10999
+
+[STEAM]
+master_server_port = 27016
+authentication_port = 8766
+
+[GAMEPLAY]
+max_players = 6
+pause_when_empty = true
+EOF
