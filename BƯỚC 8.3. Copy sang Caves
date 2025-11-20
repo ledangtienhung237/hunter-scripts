@@ -1,0 +1,2 @@
+cp ~/.klei/DoNotStarveTogether/MyDediServer/Master/modoverrides.lua \
+   ~/.klei/DoNotStarveTogether/MyDediServer/Caves/modoverrides.lua
