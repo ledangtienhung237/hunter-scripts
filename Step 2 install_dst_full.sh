@@ -33,10 +33,10 @@ echo "==============================="
 
 echo "[1] Installing SteamCMD..."
 
-mkdir -p ~/steamcmd
+mkdir -p "$HOME/steamcmd"
 check_success "Created folder ~/steamcmd"
 
-cd ~/steamcmd
+cd "$HOME/steamcmd"
 
 wget https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz -O steamcmd_linux.tar.gz
 check_success "Downloaded SteamCMD"
@@ -52,12 +52,13 @@ check_exists "$HOME/steamcmd/steamcmd.sh"
 
 echo "[2] Installing DST Dedicated Server..."
 
-mkdir -p ~/dstserver
+mkdir -p "$HOME/dstserver"
 check_success "Created folder ~/dstserver"
 
-cd ~/steamcmd
+cd "$HOME/steamcmd"
 
-./steamcmd.sh +login anonymous +force_install_dir ~/dstserver +app_update 343050 validate +quit
+# FIX CHUẨN: force_install_dir phải đặt trước +login
+./steamcmd.sh +force_install_dir "$HOME/dstserver" +login anonymous +app_update 343050 validate +quit
 check_success "SteamCMD installed DST dedicated server"
 
 check_exists "$HOME/dstserver/bin"
@@ -71,10 +72,10 @@ check_exists "$HOME/dstserver/mods"
 
 echo "[3] Creating Klei server structure..."
 
-mkdir -p ~/.klei/DoNotStarveTogether/MyDediServer/Master
+mkdir -p "$HOME/.klei/DoNotStarveTogether/MyDediServer/Master"
 check_success "Created Master shard folder"
 
-mkdir -p ~/.klei/DoNotStarveTogether/MyDediServer/Caves
+mkdir -p "$HOME/.klei/DoNotStarveTogether/MyDediServer/Caves"
 check_success "Created Caves shard folder"
 
 check_exists "$HOME/.klei/DoNotStarveTogether/MyDediServer"
@@ -87,6 +88,7 @@ echo -e "${GREEN}===================================="
 echo " DST SERVER INSTALLATION COMPLETED "
 echo "====================================${NC}"
 EOF
+
 
 
 
