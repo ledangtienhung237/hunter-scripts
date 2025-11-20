@@ -1,0 +1,8 @@
+cat > ~/.klei/DoNotStarveTogether/MyDediServer/Master/modoverrides.lua << 'EOF'
+return {
+  ["workshop-378160973"] = { enabled = true },
+  ["workshop-2189004162"] = { enabled = true },
+  ["workshop-1185229307"] = { enabled = true },
+  ["workshop-501385076"] = { enabled = true },
+}
+EOF
