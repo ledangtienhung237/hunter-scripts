@@ -96,3 +96,4 @@ EOF
 
 ✅ Sau đó cấp quyền chạy
 chmod +x install_dst_full.sh
+~/install_dst_full.sh
