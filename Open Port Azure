@@ -1,26 +1,56 @@
-# === CONFIG ===
-$rg = "YOUR-RESOURCE-GROUP"        # Thay bằng Resource Group của VM
-$nsg = "YOUR-NSG-NAME"             # Tên NSG đang gắn vào NIC hoặc Subnet
+<#
+.SYNOPSIS
+    Script mở full port dành cho Don't Starve Together Dedicated Server trên Azure.
+    Bao gồm Master, Caves, Shard link, Steam Auth và Steam Query.
 
-# DST Ports
-$ports = @(
-    @{Name="DST-Master";       Port=10999},
-    @{Name="DST-Caves";        Port=11000},
-    @{Name="DST-Internal";     Port=10888},
-    @{Name="DST-Steam1";       Port=27016},
-    @{Name="DST-Steam2";       Port=27017},
-    @{Name="DST-Steam3";       Port=27018},
-    @{Name="DST-Auth";         Port=8768}
+.NOTES
+    Yêu cầu: Azure CLI đã đăng nhập (az login)
+#>
+
+param(
+    [Parameter(Mandatory = $true)]
+    [string]$rg,       # Resource Group chứa NSG
+
+    [Parameter(Mandatory = $true)]
+    [string]$nsg       # Tên NSG gắn vào NIC hoặc Subnet của VM
 )
 
-# === CREATE RULES ===
+Write-Host "=== Checking Azure Login Status ===" -ForegroundColor Cyan
+$account = az account show 2>$null
+if (-not $account) {
+    Write-Host "ERROR: Bạn chưa đăng nhập Azure CLI. Hãy chạy: az login" -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "=== Validating NSG Exists ===" -ForegroundColor Cyan
+$nsgCheck = az network nsg show --resource-group $rg --name $nsg 2>$null
+if (-not $nsgCheck) {
+    Write-Host "ERROR: NSG '$nsg' không tồn tại trong Resource Group '$rg'." -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "NSG found. Proceeding..." -ForegroundColor Green
+
+
+# === DST PORT DEFINITIONS ===
+$ports = @(
+    @{Name="DST-Master";   Port=10999},
+    @{Name="DST-Caves";    Port=11000},
+    @{Name="DST-Link";     Port=10888},
+    @{Name="Steam-Query1"; Port=27016},
+    @{Name="Steam-Query2"; Port=27017},
+    @{Name="Steam-Query3"; Port=27018},
+    @{Name="Steam-Auth";   Port=8768}
+)
+
+# === CREATE INBOUND RULES ===
 $priority = 110
 
 foreach ($p in $ports) {
     $ruleName = $p.Name
     $portNum  = $p.Port
 
-    Write-Output "Creating rule $ruleName for port $portNum ..."
+    Write-Host "Creating rule: $ruleName (UDP $portNum) ..." -ForegroundColor Yellow
 
     az network nsg rule create `
         --resource-group $rg `
@@ -28,14 +58,23 @@ foreach ($p in $ports) {
         --name $ruleName `
         --priority $priority `
         --direction Inbound `
-        --protocol Tcp `
+        --protocol Udp `
         --source-address-prefixes "*" `
         --source-port-ranges "*" `
         --destination-address-prefixes "*" `
         --destination-port-ranges $portNum `
-        --access Allow
+        --access Allow | Out-Null
 
-    $priority += 1
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "✔ Created: $ruleName" -ForegroundColor Green
+    }
+    else {
+        Write-Host "✖ Failed: $ruleName" -ForegroundColor Red
+    }
+
+    $priority++
 }
 
-Write-Output "✔ DONE – All DST ports opened successfully!"
+Write-Host "`n========================================"
+Write-Host "✔ DONE – All DST ports opened successfully!"
+Write-Host "========================================`n" -ForegroundColor Green
