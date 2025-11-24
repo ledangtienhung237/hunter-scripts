@@ -103,3 +103,13 @@ EOF
 
 chmod +x ~/setup_dst_dependencies.sh
 echo -e "\033[1;32m[INFO]\033[0m File setup_dst_dependencies.sh đã được tạo và cấp quyền chạy!"
+
+
+
+
+
+
+
+
+
+sudo ~/setup_dst_dependencies.sh
