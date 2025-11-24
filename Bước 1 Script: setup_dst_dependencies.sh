@@ -1,58 +1,75 @@
-cat > ~/setup_dst_dependencies.sh << 'EOF'
 #!/bin/bash
+set -euo pipefail
 
 # ===============================
-# DST SERVER — DEPENDENCY SETUP
+# Don't Starve Together Server
+# DEPENDENCIES + UDP OPTIMIZATION
 # ===============================
-LOG() {
-    echo -e "\033[1;32m[INFO]\033[0m $1"
-}
-ERROR() {
-    echo -e "\033[1;31m[ERROR]\033[0m $1"
+
+GREEN="\033[1;32m"
+RED="\033[1;31m"
+YELLOW="\033[1;33m"
+NC="\033[0m"
+
+LOG() { echo -e "${GREEN}[INFO]${NC} $1"; }
+WARN() { echo -e "${YELLOW}[WARN]${NC} $1"; }
+ERROR() { echo -e "${RED}[ERROR]${NC} $1"; }
+
+check_root() {
+    if [ "$EUID" -ne 0 ]; then
+        ERROR "Script cần chạy với quyền root (sudo)."
+        exit 1
+    fi
 }
 
-check_step() {
+check_success() {
     if [ $? -ne 0 ]; then
-        ERROR "$1 FAILED! Dừng script ngay."
+        ERROR "$1 FAILED — Dừng script!"
         exit 1
     else
         LOG "$1 thành công."
     fi
 }
 
-LOG "BẮT ĐẦU CẬP NHẬT HỆ THỐNG..."
+check_root
 
-# Update package lists
-sudo apt update -y
-check_step "apt update"
+LOG "=============================="
+LOG "  BẮT ĐẦU CÀI ĐẶT DEPENDENCY  "
+LOG "=============================="
 
-# Upgrade hệ thống
-sudo apt upgrade -y
-check_step "apt upgrade"
+# -------------------------------
+# 1. Update + Upgrade hệ thống
+# -------------------------------
+LOG "Cập nhật hệ thống..."
+apt update -y && apt upgrade -y
+check_success "Update + Upgrade"
 
-# Add i386 architecture
-LOG "Bật kiến trúc 32-bit..."
-sudo dpkg --add-architecture i386
-check_step "dpkg add-architecture i386"
+# -------------------------------
+# 2. Add kiến trúc 32-bit
+# -------------------------------
+LOG "Bật kiến trúc 32-bit (i386)..."
+dpkg --add-architecture i386
+check_success "Add architecture i386"
 
-# Update lại sau khi thêm kiến trúc
-sudo apt update -y
-check_step "apt update lần 2"
+apt update -y
+check_success "Update lần 2 sau khi thêm i386"
 
-# Install required packages
-LOG "Cài đặt dependency cho SteamCMD + DST..."
-sudo apt install -y lib32gcc-s1 screen wget tar ca-certificates
-check_step "Cài lib32gcc-s1, screen, wget, tar, ca-certificates"
+# -------------------------------
+# 3. Cài dependency chính
+# -------------------------------
+LOG "Cài đặt dependency cần thiết (lib32gcc*, screen, wget, tar, ca-cert)..."
+apt install -y lib32gcc-s1 lib32stdc++6 screen wget tar ca-certificates
+check_success "Cài dependency DST + SteamCMD"
 
-LOG "============================"
-LOG "TẤT CẢ ĐÃ HOÀN TẤT THÀNH CÔNG!"
-LOG "Server ready để bước tiếp theo."
-LOG "============================"
+# -------------------------------
+# 4. Kernel UDP Tuning (DST BOOST)
+# -------------------------------
+LOG "Áp dụng cấu hình kernel tối ưu UDP cho DST..."
 
-EOF
-
-
-
-
-🔧 Cấp quyền chạy script
-chmod +x ~/setup_dst_dependencies.sh
+cat > /etc/sysctl.d/99-dst-udp.conf << 'EOF'
+# ===== DST UDP OPTIMIZATION =====
+net.core.rmem_max = 26214400
+net.core.wmem_max = 26214400
+net.core.rmem_default = 26214400
+net.core.wmem_default = 26214400
+net.core.netdev_max_backlog = 4
