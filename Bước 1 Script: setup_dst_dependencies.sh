@@ -13,7 +13,7 @@ WARN() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 ERR()  { echo -e "${RED}[ERR]${NC} $1"; }
 
 # ===== ROOT CHECK =====
-if [ "$EUID" -ne 0 ]; then
+if [ "$EUID" -ne 0"; then
     ERR "Hãy chạy script bằng: sudo ./setup_dst_dependencies.sh"
     exit 1
 fi
@@ -29,24 +29,18 @@ if [ -f /var/run/reboot-required ]; then
     exit 1
 fi
 
-# ===== 1. UPDATE PACKAGE LIST (KHÔNG UPGRADE KERNEL) =====
-echo "[INFO] Cập nhật danh sách package..."
+# ===== 1. UPDATE PACKAGE LIST =====
 apt update -y
 OK "Package list updated"
 
 # ===== 2. ENABLE i386 ARCHITECTURE =====
-if dpkg --print-foreign-architectures | grep -q i386; then
-    OK "i386 đã bật"
-else
-    echo "[INFO] Bật kiến trúc i386..."
+if ! dpkg --print-foreign-architectures | grep -q i386; then
     dpkg --add-architecture i386
     apt update -y
-    OK "i386 enabled"
 fi
+OK "i386 enabled"
 
-# ===== 3. INSTALL 32-BIT DEPENDENCIES (CHUẨN CHO UBUNTU 24.04) =====
-echo "[INFO] Cài dependency SteamCMD..."
-
+# ===== 3. INSTALL 32-BIT DEPENDENCIES =====
 apt install -y \
     libc6:i386 \
     libc6-i386 \
@@ -63,14 +57,10 @@ apt install -y \
     screen \
     tar \
     ca-certificates
-
 OK "Dependency SteamCMD đã cài xong"
 
-# ===== 4. UDP OPTIMIZATION (SAFE MODE) =====
-echo "[INFO] Áp dụng UDP tuning..."
-
+# ===== 4. UDP OPTIMIZATION =====
 cat > /etc/sysctl.d/99-dst-udp.conf << 'EOT'
-# ===== DST UDP OPTIMIZATION =====
 net.core.rmem_max = 26214400
 net.core.wmem_max = 26214400
 net.core.netdev_max_backlog = 4096
@@ -81,31 +71,15 @@ EOT
 sysctl --system > /dev/null
 OK "UDP tuning applied"
 
-# ===== 5. FINAL CHECKS =====
-echo "[INFO] Kiểm tra screen..."
-screen --version >/dev/null && OK "Screen OK"
-
-echo "[INFO] Kiểm tra lib 32-bit..."
-dpkg -l | grep -q ":i386" && OK "Thư viện 32-bit OK"
-
 echo -e "${GREEN}=============================="
 echo -e " DST DEPENDENCIES READY "
 echo -e "==============================${NC}"
-
-exit 0
 EOF
 
 
-✔ Chạy lệnh:
+
+
+Chạy:
+
 chmod +x ~/setup_dst_dependencies.sh
 sudo ~/setup_dst_dependencies.sh
-
-✔ Test SteamCMD:
-cd ~/steamcmd
-./steamcmd.sh +quit
-
-
-Nếu thấy:
-
-Steam Console Client
-OK
