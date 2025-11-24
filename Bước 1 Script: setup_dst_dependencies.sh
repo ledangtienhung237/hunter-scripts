@@ -2,114 +2,110 @@ cat > ~/setup_dst_dependencies.sh << 'EOF'
 #!/bin/bash
 set -euo pipefail
 
-# ===============================
-# Don't Starve Together Server
-# DEPENDENCIES + UDP OPTIMIZATION
-# ===============================
-
+# ===== COLOR LOG =====
 GREEN="\033[1;32m"
-RED="\033[1;31m"
 YELLOW="\033[1;33m"
+RED="\033[1;31m"
 NC="\033[0m"
 
-LOG() { echo -e "${GREEN}[INFO]${NC} $1"; }
+OK()   { echo -e "${GREEN}[OK]${NC} $1"; }
 WARN() { echo -e "${YELLOW}[WARN]${NC} $1"; }
-ERROR() { echo -e "${RED}[ERROR]${NC} $1"; }
+ERR()  { echo -e "${RED}[ERR]${NC} $1"; }
 
-check_root() {
-    if [ "$EUID" -ne 0 ]; then
-        ERROR "Script cần chạy với quyền root (sudo)."
-        exit 1
-    fi
-}
+# ===== ROOT CHECK =====
+if [ "$EUID" -ne 0 ]; then
+    ERR "Hãy chạy script bằng: sudo ./setup_dst_dependencies.sh"
+    exit 1
+fi
 
-check_success() {
-    if [ $? -ne 0 ]; then
-        ERROR "$1 FAILED — Dừng script!"
-        exit 1
-    else
-        LOG "$1 thành công."
-    fi
-}
+echo -e "${GREEN}=============================="
+echo -e " SAFE DST DEPENDENCY INSTALL  "
+echo -e "==============================${NC}"
 
-check_root
+# ===== 0. CHẶN REBOOT PENDING =====
+if [ -f /var/run/reboot-required ]; then
+    WARN "Hệ thống yêu cầu reboot trước khi tiếp tục!"
+    WARN "Chạy lệnh: sudo reboot"
+    exit 1
+fi
 
-LOG "=============================="
-LOG "  BẮT ĐẦU CÀI ĐẶT DEPENDENCY  "
-LOG "=============================="
-
-# -------------------------------
-# 1. Update + Upgrade hệ thống
-# -------------------------------
-LOG "Cập nhật hệ thống..."
-apt update -y && apt upgrade -y
-check_success "Update + Upgrade"
-
-# -------------------------------
-# 2. Add kiến trúc 32-bit
-# -------------------------------
-LOG "Bật kiến trúc 32-bit (i386)..."
-dpkg --add-architecture i386
-check_success "Add architecture i386"
-
+# ===== 1. UPDATE PACKAGE LIST (KHÔNG UPGRADE KERNEL) =====
+echo "[INFO] Cập nhật danh sách package..."
 apt update -y
-check_success "Update lần 2 sau khi thêm i386"
+OK "Package list updated"
 
-# -------------------------------
-# 3. Cài dependency chính
-# -------------------------------
-LOG "Cài đặt dependency cần thiết (lib32gcc*, screen, wget, tar, ca-cert)..."
-apt install -y lib32gcc-s1 lib32stdc++6 screen wget tar ca-certificates
-check_success "Cài dependency DST + SteamCMD"
+# ===== 2. ENABLE i386 ARCHITECTURE =====
+if dpkg --print-foreign-architectures | grep -q i386; then
+    OK "i386 đã bật"
+else
+    echo "[INFO] Bật kiến trúc i386..."
+    dpkg --add-architecture i386
+    apt update -y
+    OK "i386 enabled"
+fi
 
-# -------------------------------
-# 4. Kernel UDP Tuning (DST BOOST)
-# -------------------------------
-LOG "Áp dụng cấu hình kernel tối ưu UDP cho DST..."
+# ===== 3. INSTALL 32-BIT DEPENDENCIES (CHUẨN CHO UBUNTU 24.04) =====
+echo "[INFO] Cài dependency SteamCMD..."
+
+apt install -y \
+    libc6:i386 \
+    libc6-i386 \
+    libstdc++6:i386 \
+    libgcc-s1:i386 \
+    libbz2-1.0:i386 \
+    libncurses6:i386 \
+    libtinfo6:i386 \
+    libunistring5:i386 \
+    libidn2-0:i386 \
+    lib32gcc-s1 \
+    lib32stdc++6 \
+    wget \
+    screen \
+    tar \
+    ca-certificates
+
+OK "Dependency SteamCMD đã cài xong"
+
+# ===== 4. UDP OPTIMIZATION (SAFE MODE) =====
+echo "[INFO] Áp dụng UDP tuning..."
 
 cat > /etc/sysctl.d/99-dst-udp.conf << 'EOT'
 # ===== DST UDP OPTIMIZATION =====
 net.core.rmem_max = 26214400
 net.core.wmem_max = 26214400
-net.core.rmem_default = 26214400
-net.core.wmem_default = 26214400
 net.core.netdev_max_backlog = 4096
 net.ipv4.udp_rmem_min = 16384
 net.ipv4.udp_wmem_min = 16384
-net.ipv4.udp_mem = 4096 87380 16777216
 EOT
 
-sysctl --system >/dev/null 2>&1
-check_success "UDP Kernel Optimization"
+sysctl --system > /dev/null
+OK "UDP tuning applied"
 
-# -------------------------------
-# 5. Xác nhận screen & SteamCMD env
-# -------------------------------
-LOG "Kiểm tra screen..."
-screen --version >/dev/null 2>&1
-check_success "Screen ready"
+# ===== 5. FINAL CHECKS =====
+echo "[INFO] Kiểm tra screen..."
+screen --version >/dev/null && OK "Screen OK"
 
-LOG "Kiểm tra thư mục home..."
-mkdir -p /home/hunter
-check_success "Home directory check"
+echo "[INFO] Kiểm tra lib 32-bit..."
+dpkg -l | grep -q ":i386" && OK "Thư viện 32-bit OK"
 
-LOG "=============================="
-LOG " TẤT CẢ DEPENDENCY ĐÃ SẴN SÀNG "
-LOG " Server READY cho bước tiếp!   "
-LOG "=============================="
+echo -e "${GREEN}=============================="
+echo -e " DST DEPENDENCIES READY "
+echo -e "==============================${NC}"
 
 exit 0
 EOF
 
+
+✔ Chạy lệnh:
 chmod +x ~/setup_dst_dependencies.sh
-echo -e "\033[1;32m[INFO]\033[0m File setup_dst_dependencies.sh đã được tạo và cấp quyền chạy!"
-
-
-
-
-
-
-
-
-
 sudo ~/setup_dst_dependencies.sh
+
+✔ Test SteamCMD:
+cd ~/steamcmd
+./steamcmd.sh +quit
+
+
+Nếu thấy:
+
+Steam Console Client
+OK
